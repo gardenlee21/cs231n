@@ -80,7 +80,10 @@ class TwoLayerNet(object):
         #############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        # 2-layver Neural Network f=W2 max(0, W1x)
+        hidden = X.dot(W1) + b1 #(N,H)
+        relu = np.maximum(0, hidden) # activate function ReLU, (N, H)
+        scores = relu.dot(W2) + b2 # (N, C)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -98,7 +101,14 @@ class TwoLayerNet(object):
         #############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        scores -= np.max(scores) #(N, C)
+        scores_exp = np.exp(scores) #(N, C)
+        scores_exp_sum = np.sum(scores_exp, axis=1) #(N, )
+        correct_exp = scores_exp[range(N), y]
+        loss = -np.log(correct_exp / scores_exp_sum)
+
+        #average, reg of loss
+        loss = np.sum(loss)/N + reg * (np.sum(W1 * W1) + np.sum(W2 * W2)) 
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -111,8 +121,23 @@ class TwoLayerNet(object):
         #############################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-        pass
+        scores2 = np.divide(scores_exp, scores_exp_sum.reshape(N,1)) #(N, C)
+        scores2[range(N), y] = (correct_exp - scores_exp_sum) / scores_exp_sum
+        scores2 /= N #average
 
+        grads['W2'] = relu.T.dot(scores2) #(H, C)
+        grads['b2'] = np.sum(scores2, axis=0) #(C, )
+
+        #for hidden layer
+        dhidden = scores2.dot(W2.T) #(N, H)
+        dhidden[relu <= 0] = 0 #ReLU inverse
+
+        grads['W1'] = X.T.dot(dhidden) #(D, H)
+        grads['b1'] = np.sum(dhidden, axis=0) #(H, )
+
+        #reg
+        grads['W1'] += 2* reg * W1
+        grads['W2'] += 2* reg * W2
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
         return loss, grads
@@ -156,7 +181,9 @@ class TwoLayerNet(object):
             #########################################################################
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-            pass
+            mask = np.random.choice(range(num_train), batch_size)
+            X_batch = X[mask]
+            y_batch = y[mask]
 
             # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -172,7 +199,10 @@ class TwoLayerNet(object):
             #########################################################################
             # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
-            pass
+            self.params['W1'] -= learning_rate * grads['W1']
+            self.params['b1'] -= learning_rate * grads['b1']
+            self.params['W2'] -= learning_rate * grads['W2']
+            self.params['b2'] -= learning_rate * grads['b2']
 
             # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
@@ -217,8 +247,16 @@ class TwoLayerNet(object):
         # TODO: Implement this function; it should be VERY simple!                #
         ###########################################################################
         # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
+        W1, b1 = self.params['W1'], self.params['b1']
+        W2, b2 = self.params['W2'], self.params['b2']
+        N, D = X.shape
 
-        pass
+        # 2-layver Neural Network f=W2 max(0, W1x)
+        hidden = X.dot(W1) + b1 #(N,H)
+        relu = np.maximum(0, hidden) # activate function ReLU, (N, H)
+        scores = relu.dot(W2) + b2
+
+        y_pred = np.argmax(scores, axis=1)
 
         # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
